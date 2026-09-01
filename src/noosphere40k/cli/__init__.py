@@ -1,0 +1,1 @@
+"""CLI package: typer app, command implementations and rendering (G-01 first)."""

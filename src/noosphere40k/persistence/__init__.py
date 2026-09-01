@@ -1,0 +1,1 @@
+"""Persistence package: database, repositories and migrations (C-02 first)."""

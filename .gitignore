@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 本地环境配置
+.env
+.env.local
+
+# 存档与私有资料（绝不入仓库）
+saves/
+private_lore/
+data/
+
+# 构建产物
+build/
+dist/
+*.whl
+
+# IDE
+.idea/
+.vscode/

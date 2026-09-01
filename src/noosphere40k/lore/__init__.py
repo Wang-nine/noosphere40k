@@ -1,0 +1,1 @@
+"""Lore package: schemas, registry, retrieval and coverage (D-01 first)."""

@@ -1,0 +1,1 @@
+"""LLM package: provider contract, prompts and stubs (E-01 first)."""
