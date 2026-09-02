@@ -4,6 +4,17 @@
 
 ## 2026-09-02
 
+- 开发（第五批）：资料与内容 D-07…D-10、F-03…F-07。
+  - 新增 `lore/importers/cleaner.py` 与 `lore/importers/importer.py`（D-07）：HTML/文本净化（剥离脚本/样式/导航/隐藏文本）、提示注入检测（中英文）、引用材料提取、ZIP 安全解压（路径穿越/符号链接/压缩炸弹/条目数拒绝）；`PlainTextImporter` 只产出 `candidate`，从不自动批准。
+  - 新增 `lore/review.py`（D-08）：`ReviewService` 审核工作流——candidate 不能直接变 approved，必须显式 `approve/reject` 并记录审核者与时间；非法状态迁移拒绝；批准后事实才可查询。
+  - 迁移 0003：`lore_facts`/`lore_entities` 增加 `reviewed_by`/`reviewed_at_utc` 审核列。
+  - 新增 `lore/coverage_report.py`（D-09/D-10）：Galaxy Primer 12 主题域覆盖报告与空缺列表；Campaign Pack hard 需求满足率计算（candidate 不满足 hard 需求）。
+  - 新增 `content/life_content.py` + `content/life_content/pack.yaml`（F-03…F-07）：三种童年出身（各 ≥5 必经/≥8 可选/≥3 生活事件 + 儿童安全标签校验）、少年章节（含角色观点/百科对照）、四条青年职业路线（各 ≥5 场景/≥3 证据/≥2 非战斗方案）、壮年汇合 6 种立场（均 ≥2 路线可达、无单骰点关键线索）、晚年 ≥6 类终局 + 童年关系回响场景；全部本地事实为 `game_original` 占位，不冒充已批准官方 Lore。
+  - 测试：232 项通过（Unit + Contract），Ruff 与 MyPy strict（57 文件）全绿。
+  - 状态：仍未接入生产 LLM 与真实已批准 40K Lore；下一批为 UX 与发布（G-03…G-05、H-02…H-06）。
+
+## 2026-09-02
+
 - 开发（第四批）：完整生命系统 B-04…B-08、G-06、E-07。
   - 新增 `rules/aging.py`（B-04）：生命阶段参考年龄区间、阶段只能向前/进入 terminal、`LifeTransitionService`（预览纯函数无副作用、结算确定性、未知 aging_ruleset/倒推阶段/from_stage 不匹配拒绝）；LLM 无直接改龄接口。
   - 扩展 reducer：`TimeAdvanced` 推进年龄天数、`SkillProgressed` 更新技能与等级（进度→untrained/trained/specialist/master）、`ConditionApplied/Removed`、`WoundApplied/Changed`、`VocationStarted/Ended`、`GoalAdded/Updated`；`CharacterDied` 使战役进入 TERMINAL。

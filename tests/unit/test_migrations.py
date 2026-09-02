@@ -15,7 +15,7 @@ from noosphere40k.persistence.migrations import MIGRATIONS
 def test_fresh_database_auto_migrates(tmp_path: Path) -> None:
     engine = open_engine(tmp_path / "test.db")
     applied = run_migrations(engine, MIGRATIONS)
-    assert [m.version for m in applied] == [1, 2]
+    assert [m.version for m in applied] == [1, 2, 3]
     with engine.connect() as conn:
         tables = {row[0] for row in conn.execute(text(
             "SELECT name FROM sqlite_master WHERE type='table'"

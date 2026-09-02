@@ -1,0 +1,249 @@
+pack_id: lifepath.content.imperium_frontier
+version: "0.1.0"
+schema_version: 1
+childhood_echo_scene_id: scene.latelife.childhood_echo
+
+origins:
+  origin.hive_worker_household:
+    origin_id: origin.hive_worker_household
+    display_name: 巢都工人家庭
+    start_location_id: game_original.hive_residential_ward
+    core_relations: [guardian, sibling_or_peer, elderly_neighbor]
+    early_systems: [ration, labor_shift, local_shrine, machine_taboo]
+    required_events:
+      - event_id: hive.family_setup
+        title: 家庭与居住层
+        kind: required
+        description: 建立家庭关系和居住环境认知
+        content_tags: [daily_life, safe]
+      - event_id: hive.ration_choice
+        title: 第一次配给选择
+        kind: required
+        description: 学习分配与分享
+        content_tags: [daily_life, resource, safe]
+      - event_id: hive.ritual_visit
+        title: 第一次宗教仪式
+        kind: required
+        description: 接触地方教会仪式
+        content_tags: [faith, safe]
+      - event_id: hive.machine_taboo
+        title: 机器不是工具
+        kind: required
+        description: 第一次接触机械崇拜观念
+        content_tags: [machine_taboo, safe]
+      - event_id: hive.neighbor_missing
+        title: 从登记簿上消失的邻居
+        kind: required
+        description: 灰籍异常首次影响熟人
+        content_tags: [ashen_register, mystery, safe]
+    optional_events:
+      - {event_id: hive.market_run, title: 跑腿去市场, kind: optional, description: 认识邻里与物价, content_tags: [daily_life, safe]}
+      - {event_id: hive.school_glance, title: 瞄一眼教会学校, kind: optional, description: 观察识字的孩子, content_tags: [learning, safe]}
+      - {event_id: hive.pet_rat, title: 一只配给老鼠, kind: optional, description: 关于生命的责任, content_tags: [daily_life, safe]}
+      - {event_id: hive.ration_short, title: 配给减少的一周, kind: optional, description: 饥饿与忍让, content_tags: [scarcity, safe]}
+      - {event_id: hive.shift_injury, title: 父亲的工伤, kind: optional, description: 医疗与账单, content_tags: [health, safe]}
+      - {event_id: hive.stair_race, title: 楼梯间的比赛, kind: optional, description: 与同龄人相处, content_tags: [play, safe]}
+      - {event_id: hive.broadcast_hymn, title: 广播里的祷词, kind: optional, description: 学会几句祷词, content_tags: [faith, safe]}
+      - {event_id: hive.red_robe_glimpse, title: 瞥见红袍人, kind: optional, description: 机器禁忌的直观, content_tags: [machine_taboo, safe]}
+    life_events:
+      - {event_id: hive.life.illness, title: 一场病, kind: life_event, description: 家人生病影响配给, content_tags: [health, safe]}
+      - {event_id: hive.life.praise, title: 工头的一句称赞, kind: life_event, description: 第一次被认可, content_tags: [work, safe]}
+      - {event_id: hive.life.eviction_rumor, title: 整层要搬迁的传言, kind: life_event, description: 记录决定居住地, content_tags: [ashen_register, safe]}
+
+  origin.voidship_household:
+    origin_id: origin.voidship_household
+    display_name: 虚空船员家庭
+    start_location_id: game_original.orbital_transport_vessel
+    core_relations: [guardian, crew_peer, maintenance_elder]
+    early_systems: [watch_rotation, ship_custom, sealed_decks, travel_fear]
+    required_events:
+      - event_id: void.family_setup
+        title: 船舱与换班
+        kind: required
+        description: 建立船上共同体的认知
+        content_tags: [voidship, safe]
+      - event_id: void.watch_rotation
+        title: 第一次值更
+        kind: required
+        description: 学习守夜与服从
+        content_tags: [work, safe]
+      - event_id: void.sealed_deck
+        title: 被封闭的甲板
+        kind: required
+        description: 第一次理解为何有些地方不能去
+        content_tags: [voidship, mystery, safe]
+      - event_id: void.engine_elder
+        title: 轮机长老的故事
+        kind: required
+        description: 从老人处听机器与规矩
+        content_tags: [machine_taboo, safe]
+      - event_id: void.ashen_manifest
+        title: 名册上的划痕
+        kind: required
+        description: 灰籍问题第一次在船上出现
+        content_tags: [ashen_register, mystery, safe]
+    optional_events:
+      - {event_id: void.night_stars, title: 观察虚空, kind: optional, description: 星海与孤独, content_tags: [voidship, safe]}
+      - {event_id: void.ration_bunk, title: 分餐, kind: optional, description: 船上配额, content_tags: [resource, safe]}
+      - {event_id: void.cargo_slip, title: 一封货运单, kind: optional, description: 识字启蒙, content_tags: [learning, safe]}
+      - {event_id: void.zero_g, title: 失重时刻, kind: optional, description: 身体与自由, content_tags: [play, safe]}
+      - {event_id: void.prayer_drone, title: 祷钟, kind: optional, description: 船上信仰, content_tags: [faith, safe]}
+      - {event_id: void.elders_cough, title: 老船员咳嗽, kind: optional, description: 疾病与忍耐, content_tags: [health, safe]}
+      - {event_id: void.dock_rumor, title: 停靠时的传言, kind: optional, description: 港口的流言, content_tags: [mystery, safe]}
+      - {event_id: void.tool_ethics, title: 工具还回去, kind: optional, description: 船规与信任, content_tags: [work, safe]}
+    life_events:
+      - {event_id: void.life.storm, title: 一次亚空间航行恐惧, kind: life_event, description: 禁忌的第一次接触, content_tags: [travel_fear, safe]}
+      - {event_id: void.life.promotion, title: 父亲升任, kind: life_event, description: 阶层的一小步, content_tags: [work, safe]}
+      - {event_id: void.life.crewer_leave, title: 同伴调走, kind: life_event, description: 记录改变人, content_tags: [ashen_register, safe]}
+
+  origin.institutional_orphanage:
+    origin_id: origin.institutional_orphanage
+    display_name: 行政/教会附属孤儿院
+    start_location_id: game_original.scholam_annex
+    core_relations: [caretaker, rival_peer, younger_dependent]
+    early_systems: [literacy, catechism, recordkeeping, aptitude_ranking]
+    required_events:
+      - event_id: inst.setup
+        title: 孤儿院的床铺
+        kind: required
+        description: 建立机构生活认知
+        content_tags: [institution, safe]
+      - event_id: inst.aptitude_ranking
+        title: 第一次排位
+        kind: required
+        description: 学会排名与竞争
+        content_tags: [institution, learning, safe]
+      - event_id: inst.catechism
+        title: 背祷词
+        kind: required
+        description: 信仰训导
+        content_tags: [faith, safe]
+      - event_id: inst.record_lookup
+        title: 查自己的档案
+        kind: required
+        description: 记录决定你是谁
+        content_tags: [recordkeeping, ashen_register, safe]
+      - event_id: inst.file_discrepancy
+        title: 档案上的错字
+        kind: required
+        description: 灰籍异常第一次进入档案
+        content_tags: [ashen_register, mystery, safe]
+    optional_events:
+      - {event_id: inst.chalk, title: 学会写字, kind: optional, description: 识字, content_tags: [learning, safe]}
+      - {event_id: inst.rivalry, title: 与同伴的竞争, kind: optional, description: 友与敌, content_tags: [institution, safe]}
+      - {event_id: inst.younger_charge, title: 照顾更小的孩子, kind: optional, description: 责任, content_tags: [institution, safe]}
+      - {event_id: inst.caretaker_favor, title: 教导者的一次偏袒, kind: optional, description: 规则的模糊, content_tags: [institution, safe]}
+      - {event_id: inst.hymn_chorus, title: 唱诗班, kind: optional, description: 信仰与表演, content_tags: [faith, safe]}
+      - {event_id: inst.stolen_ration, title: 少了一份配给, kind: optional, description: 不公与沉默, content_tags: [scarcity, safe]}
+      - {event_id: inst.visitor_family, title: 被领养的同伴, kind: optional, description: 离别, content_tags: [institution, safe]}
+      - {event_id: inst.library_dust, title: 灰尘里的旧册, kind: optional, description: 意外的知识, content_tags: [learning, mystery, safe]}
+    life_events:
+      - {event_id: inst.life.illness, title: 一场流感, kind: life_event, description: 机构里的病, content_tags: [health, safe]}
+      - {event_id: inst.life.promotion, title: 排位上升, kind: life_event, description: 被看见, content_tags: [institution, safe]}
+      - {event_id: inst.life.record_clean, title: 档案被清理, kind: life_event, description: 有人被抹去, content_tags: [ashen_register, safe]}
+
+adolescence_scenes:
+  - {event_id: ado.aptitude_test, title: 能力评估, kind: required, description: 决定职业候选, content_tags: [institution, safe]}
+  - {event_id: ado.first_vocation_offer, title: 被分配的位置, kind: required, description: 第一次职业分配, content_tags: [work, safe]}
+  - {event_id: ado.truth_vs_teaching, title: 角色所学与百科事实, kind: required, description: 观点/百科对照案例, content_tags: [learning, safe]}
+  - {event_id: ado.ashen_redirect, title: 档案改变去向, kind: required, description: 灰籍改变职业分配, content_tags: [ashen_register, mystery, safe]}
+  - {event_id: ado.choose_path, title: 接受或申诉, kind: required, description: 选择立场, content_tags: [choice, safe]}
+
+routes:
+  route.records_admin:
+    route_id: route.records_admin
+    display_name: 记录与行政
+    blind_spot: 只见数字不见人
+    evidence: [档案上的日期差, 配给量与实际人口不符, 被删除的居住层]
+    non_combat_options: [调阅旧档申请, 向主管递交书面报告]
+    scenes:
+      - {event_id: admin.scene.archives, title: 档案室的第一天, kind: required, description: 进入记录系统, content_tags: [work, safe]}
+      - {event_id: admin.scene.quota_error, title: 配给错误, kind: required, description: 数字对不上, content_tags: [ashen_register, work, safe]}
+      - {event_id: admin.scene.identity, title: 身份与许可, kind: required, description: 许可决定生活, content_tags: [work, safe]}
+      - {event_id: admin.scene.master, title: 文书导师, kind: required, description: 导师与规矩, content_tags: [mentor, safe]}
+      - {event_id: admin.scene.rival, title: 制度性对手, kind: required, description: 另一个科室的反对, content_tags: [rival, safe]}
+  route.industry_tech:
+    route_id: route.industry_tech
+    display_name: 工业与技术辅助
+    blind_spot: 只见机器不见人
+    evidence: [机器故障率与人口比例, 维修单上的失踪姓名, 被拆走的设备]
+    non_combat_options: [向机械教提交维修申请, 组织工人联名上报]
+    scenes:
+      - {event_id: tech.scene.shift, title: 工班的第一班, kind: required, description: 进入生产线, content_tags: [work, safe]}
+      - {event_id: tech.scene.accident, title: 一场事故, kind: required, description: 事故与责任, content_tags: [health, work, safe]}
+      - {event_id: tech.scene.mechanicus, title: 机械教的边界, kind: required, description: 权限与敬畏, content_tags: [machine_taboo, safe]}
+      - {event_id: tech.scene.master, title: 轮机长老, kind: required, description: 师傅的言传, content_tags: [mentor, safe]}
+      - {event_id: tech.scene.rival, title: 工头与效率, kind: required, description: 效率压人, content_tags: [rival, safe]}
+  route.enforcement_military:
+    route_id: route.enforcement_military
+    display_name: 治安/军务
+    blind_spot: 只见秩序不见原因
+    evidence: [治安报告与失踪记录, 被划掉的名单, 巡逻区的人口减少]
+    non_combat_options: [疏散而非镇压, 向上级递送证据报告]
+    scenes:
+      - {event_id: enfor.scene.patrol, title: 第一次巡逻, kind: required, description: 认识辖区, content_tags: [work, safe]}
+      - {event_id: enfor.scene.riot, title: 一次骚乱, kind: required, description: 秩序与镇压, content_tags: [conflict, safe]}
+      - {event_id: enfor.scene.recruit, title: 征募日, kind: required, description: 兵役与选择, content_tags: [military, safe]}
+      - {event_id: enfor.scene.master, title: 老兵教官, kind: required, description: 服从与判断, content_tags: [mentor, safe]}
+      - {event_id: enfor.scene.rival, title: 急于立功的上司, kind: required, description: 立功与真相, content_tags: [rival, safe]}
+  route.church_care:
+    route_id: route.church_care
+    display_name: 教会/照护
+    blind_spot: 只见苦难不见原因
+    evidence: [施粥记录与人口, 丧葬登记里的缺失, 教区信徒的消失]
+    non_combat_options: [发放救济时收集证词, 组织公开祈愿以引关注]
+    scenes:
+      - {event_id: church.scene.relief, title: 施粥站, kind: required, description: 救济与记录, content_tags: [faith, safe]}
+      - {event_id: church.scene.sickbed, title: 病床旁的照料, kind: required, description: 照护与死亡, content_tags: [health, faith, safe]}
+      - {event_id: church.scene.funeral, title: 一场葬礼, kind: required, description: 葬仪与告别, content_tags: [faith, safe]}
+      - {event_id: church.scene.master, title: 教长, kind: required, description: 信仰的劝诫, content_tags: [mentor, safe]}
+      - {event_id: church.scene.rival, title: 检疫官, kind: required, description: 卫生与慈悲的冲突, content_tags: [rival, safe]}
+
+convergence_stances:
+  - stance_id: stance.order
+    display_name: 维护秩序
+    evidence_route_ids: [route.records_admin, route.enforcement_military]
+    requires_single_roll: false
+  - stance_id: stance.truth
+    display_name: 公开真相
+    evidence_route_ids: [route.records_admin, route.industry_tech]
+    requires_single_roll: false
+  - stance_id: stance.community
+    display_name: 保护具体的人
+    evidence_route_ids: [route.church_care, route.industry_tech]
+    requires_single_roll: false
+  - stance_id: stance.survival
+    display_name: 个人生存
+    evidence_route_ids: [route.enforcement_military, route.church_care]
+    requires_single_roll: false
+  - stance_id: stance.faith
+    display_name: 交给信仰
+    evidence_route_ids: [route.church_care, route.records_admin]
+    requires_single_roll: false
+  - stance_id: stance.escape
+    display_name: 逃离
+    evidence_route_ids: [route.enforcement_military, route.industry_tech]
+    requires_single_roll: false
+
+ending_types:
+  - ending_id: end.natural_death
+    display_name: 自然衰老
+    condition: 活到晚年且健康耗尽
+  - ending_id: end.service_death
+    display_name: 因职殉职
+    condition: 职业职责导致死亡
+  - ending_id: end.violent_death
+    display_name: 暴力死亡
+    condition: 战斗、治安事件或谋杀
+  - ending_id: end.execution_disappearance
+    display_name: 被制度处置或抹除
+    condition: 官方记录与真实经历差异
+  - ending_id: end.corruption_terminal
+    display_name: 腐化终局
+    condition: 腐化达到终局条件
+  - ending_id: end.escape_exile
+    display_name: 逃离或流亡
+    condition: 离开原有社会后终老或失踪
+  - ending_id: end.legacy_victory
+    display_name: 灰籍局部解决
+    condition: 灰籍问题得到局部解决（不改写正史）

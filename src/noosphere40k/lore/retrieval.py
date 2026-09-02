@@ -306,5 +306,104 @@ class LoreRepository:
             pack_version=row[13],
         )
 
+    # ---- review workflow reads/writes (D-08) ----
+
+    def get_fact_any(self, fact_id: str) -> LoreFact | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT fact_id, claim, fact_type, entity_ids_json, relation_ids_json, "
+                     "valid_time_json, valid_regions_json, source_refs_json, confidence, "
+                     "conflicts_with_json, spoiler_level, review_status, pack_id, pack_version "
+                     "FROM lore_facts WHERE fact_id = :id"),
+                {"id": fact_id},
+            ).fetchone()
+        return self._fact_from_row(row) if row else None
+
+    def get_entity_any(self, entity_id: str) -> LoreEntity | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT entity_id, canonical_name, entity_type, aliases_json, "
+                     "parent_entity_ids_json, origin, valid_time_json, source_refs_json, "
+                     "review_status FROM lore_entities WHERE entity_id = :id"),
+                {"id": entity_id},
+            ).fetchone()
+        if row is None:
+            return None
+        return LoreEntity(
+            entity_id=row[0],
+            canonical_name=row[1],
+            entity_type=row[2],
+            aliases=json.loads(row[3]),
+            parent_entity_ids=json.loads(row[4]),
+            origin=row[5],
+            valid_time=json.loads(row[6]),
+            source_refs=json.loads(row[7]),
+            review_status=row[8],
+        )
+
+    def get_source_any(self, source_id: str) -> SourceRecord | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT source_id, title, publisher, source_class, edition, publication_date, "
+                     "language, locator, access_type, canon_scope_json, viewpoint, rights_profile, "
+                     "review_status, reviewed_by, reviewed_at_utc FROM lore_sources "
+                     "WHERE source_id = :id"),
+                {"id": source_id},
+            ).fetchone()
+        if row is None:
+            return None
+        from noosphere40k.domain.enums import ReviewStatus, SourceClass, SourceViewpoint
+
+        return SourceRecord(
+            source_id=row[0],
+            title=row[1],
+            publisher=row[2],
+            source_class=SourceClass(row[3]),
+            edition=row[4],
+            publication_date=row[5],
+            language=row[6],
+            locator=row[7],
+            access_type=row[8],
+            canon_scope=json.loads(row[9]),
+            viewpoint=SourceViewpoint(row[10]),
+            rights_profile=row[11],
+            review_status=ReviewStatus(row[12]),
+            reviewed_by=row[13],
+            reviewed_at=None,
+        )
+
+    def update_fact_review(self, fact_id: str, status: str, reviewer: str) -> None:
+        from datetime import UTC, datetime
+
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("UPDATE lore_facts SET review_status = :s, reviewed_by = :r, "
+                     "reviewed_at_utc = :t WHERE fact_id = :id"),
+                {"s": status, "r": reviewer, "t": datetime.now(UTC).isoformat(), "id": fact_id},
+            )
+            fact = self.get_fact_any(fact_id)
+            if fact is not None:
+                self._sync_fts_fact(conn, fact, self._entity_alias_text(fact.entity_ids))
+
+    def update_entity_review(self, entity_id: str, status: str, reviewer: str) -> None:
+        from datetime import UTC, datetime
+
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("UPDATE lore_entities SET review_status = :s, reviewed_by = :r, "
+                     "reviewed_at_utc = :t WHERE entity_id = :id"),
+                {"s": status, "r": reviewer, "t": datetime.now(UTC).isoformat(), "id": entity_id},
+            )
+
+    def update_source_review(self, source_id: str, status: str, reviewer: str) -> None:
+        from datetime import UTC, datetime
+
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("UPDATE lore_sources SET review_status = :s, reviewed_by = :r, "
+                     "reviewed_at_utc = :t WHERE source_id = :id"),
+                {"s": status, "r": reviewer, "t": datetime.now(UTC).isoformat(), "id": source_id},
+            )
+
 
 __all__ = ["LoreRepository"]
