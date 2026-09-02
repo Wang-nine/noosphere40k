@@ -155,8 +155,8 @@ def continue_(campaign_id: str | None = typer.Argument(None)) -> None:
 
 
 @app.command()
-def saves(action: str | None = typer.Argument(None, help="list | export | import")) -> None:
-    """Save utilities: `saves list` lists campaigns."""
+def saves(action: str | None = typer.Argument(None, help="list | delete | export | import")) -> None:
+    """Save utilities: `saves list` lists, `saves delete <id>` deletes a campaign."""
     from noosphere40k.config.settings import load_settings
 
     if action == "list":
@@ -168,6 +168,28 @@ def saves(action: str | None = typer.Argument(None, help="list | export | import
             raise typer.Exit(code=0)
         for index, cid in enumerate(campaigns, start=1):
             typer.echo(f"{index}. {cid}")
+        raise typer.Exit(code=0)
+    if action == "delete":
+        settings = load_settings(cli_overrides={})
+        _ensure_db(settings)
+        cid = typer.prompt("要删除的战役 ID")
+        campaigns = _list_campaigns(settings.db_path)
+        if cid not in campaigns:
+            typer.echo(f"没有找到战役：{cid}")
+            raise typer.Exit(code=1)
+        confirm = typer.prompt(f"确认删除战役 {cid}？此操作不可撤销 [y/N]", default="n")
+        if confirm.strip().lower() not in ("y", "yes"):
+            typer.echo("已取消删除。")
+            raise typer.Exit(code=0)
+        from noosphere40k.persistence.repositories import CampaignRepository
+
+        repo = CampaignRepository.at(settings.db_path)
+        deleted = repo.delete_campaign(cid)
+        if deleted:
+            typer.echo(f"已删除战役 {cid}（含其事件、快照与角色数据）。")
+        else:
+            typer.echo(f"没有找到战役：{cid}")
+            raise typer.Exit(code=1)
         raise typer.Exit(code=0)
     _render(saves_command(action))
 

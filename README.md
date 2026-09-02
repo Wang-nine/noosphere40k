@@ -24,7 +24,8 @@ noosphere version          # 版本
 noosphere doctor           # 环境诊断（不泄露密钥）
 noosphere new "人生" --character "Ada"   # 创建并进入离线教程游戏循环
 noosphere continue         # 继续战役
-noosphere saves list       # 列出战役
+noosphere saves list         # 列出战役
+noosphere saves delete       # 删除战役（交互确认，跨表清理）
 ```
 
 游戏内元命令：`/help` `/character` `/recap` `/timejump` `/encyclopedia <术语>` `/know <主题>` `/sources <fact_id>` `/roll-details` `/settings` `/skip` `/quit`。

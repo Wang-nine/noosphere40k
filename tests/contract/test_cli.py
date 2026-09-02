@@ -58,6 +58,55 @@ def test_saves_list_with_no_campaigns() -> None:
     assert result.exit_code == 0
 
 
+def test_saves_delete_confirmed(tmp_path) -> None:
+    runner.invoke(
+        app,
+        ["new", "测试人生", "--campaign-id", "campaign.cli.del", "--character", "Test"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    result = runner.invoke(
+        app,
+        ["saves", "delete"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="campaign.cli.del\ny\n",
+    )
+    assert result.exit_code == 0
+    assert "已删除战役 campaign.cli.del" in result.output
+    listed = runner.invoke(app, ["saves", "list"], env={"NOOSPHERE_DATA_DIR": str(tmp_path)})
+    assert "campaign.cli.del" not in listed.output
+
+
+def test_saves_delete_cancelled(tmp_path) -> None:
+    runner.invoke(
+        app,
+        ["new", "测试人生", "--campaign-id", "campaign.cli.keep", "--character", "Test"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    result = runner.invoke(
+        app,
+        ["saves", "delete"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="campaign.cli.keep\nn\n",
+    )
+    assert result.exit_code == 0
+    assert "已取消删除" in result.output
+    listed = runner.invoke(app, ["saves", "list"], env={"NOOSPHERE_DATA_DIR": str(tmp_path)})
+    assert "campaign.cli.keep" in listed.output
+
+
+def test_saves_delete_missing(tmp_path) -> None:
+    result = runner.invoke(
+        app,
+        ["saves", "delete"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="campaign.cli.nope\n",
+    )
+    assert result.exit_code == 1
+    assert "没有找到战役" in result.output
+
+
 def test_unknown_command_errors() -> None:
     result = runner.invoke(app, ["frobnicate"])
     assert result.exit_code != 0

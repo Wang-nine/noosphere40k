@@ -4,6 +4,13 @@
 
 ## 2026-09-02
 
+- 新增：`noosphere saves delete` 删除存档命令（C-05 补充）。
+  - `CampaignRepository.delete_campaign`：单事务原子删除指定战役及其事件/快照/角色/关系/内容锁，并按角色 ID 清理 `knowledge_records`/`encyclopedia_unlocks`；不存在返回 False，不影响其他战役。
+  - CLI：交互式输入战役 ID + `[y/N]` 二次确认；已取消/找不到均有明确提示。
+  - 测试：272 项通过（新增删除单元测试与 CLI 确认/取消/找不到用例），Ruff 与 MyPy strict（63 文件）全绿。
+
+## 2026-09-02
+
 - 开发（LLM 叙事接入游戏循环）：新增 `application/narration_service.py`。
   - `NarrationService`：上下文组装（仅可见状态 + 允许事实）→ Narrator 生成 `NarrationResponse` → 输出守卫（一次修复，失败回退模板）；叙事仅展示、不提交事件。
   - 游戏循环接入：配置了 key 时，每个场景由真实 LLM 生成叙事；未配置 key 或 provider 失败时自动回退场景模板（离线安全）。

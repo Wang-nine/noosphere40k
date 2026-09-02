@@ -255,6 +255,50 @@ class CampaignRepository:
                 {"j": settings_json, "now": _now(), "cid": campaign_id},
             )
 
+    def delete_campaign(self, campaign_id: str) -> bool:
+        """Delete a campaign and all of its related rows atomically.
+
+        Returns True if the campaign existed and was deleted, False otherwise.
+        """
+        with self.engine.begin() as conn:
+            row = conn.execute(
+                text("SELECT campaign_id FROM campaigns WHERE campaign_id = :cid"),
+                {"cid": campaign_id},
+            ).fetchone()
+            if row is None:
+                return False
+
+            # collect character ids to clean owner-keyed tables
+            char_ids = [
+                r[0] for r in conn.execute(
+                    text("SELECT character_id FROM characters WHERE campaign_id = :cid"),
+                    {"cid": campaign_id},
+                ).fetchall()
+            ]
+            if char_ids:
+                placeholders = ",".join(f":c{i}" for i in range(len(char_ids)))
+                params = {f"c{i}": cid for i, cid in enumerate(char_ids)}
+                conn.execute(
+                    text(f"DELETE FROM knowledge_records WHERE owner_character_id IN ({placeholders})"),
+                    params,
+                )
+                conn.execute(
+                    text(f"DELETE FROM encyclopedia_unlocks WHERE owner_character_id IN ({placeholders})"),
+                    params,
+                )
+
+            for table in ("campaign_events", "campaign_snapshots", "characters",
+                          "relationships", "content_pack_locks"):
+                conn.execute(
+                    text(f"DELETE FROM {table} WHERE campaign_id = :cid"),
+                    {"cid": campaign_id},
+                )
+            conn.execute(
+                text("DELETE FROM campaigns WHERE campaign_id = :cid"),
+                {"cid": campaign_id},
+            )
+        return True
+
     def should_snapshot(self, sequence: int) -> bool:
         return sequence > 0 and sequence % SNAPSHOT_INTERVAL == 0
 
