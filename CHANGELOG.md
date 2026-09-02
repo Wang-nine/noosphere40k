@@ -4,6 +4,22 @@
 
 ## 2026-09-02
 
+- 开发（第三批）：Lore 与反幻觉 D-02…D-06、E-03…E-06。
+  - 新增 `llm/schemas.py`（E-03）：`NarrationRequest`/`NarrationResponse`、`ActionIntent`、`RuleResolution`、显示模型与 LLM 提议事件白名单；全部 `extra=forbid` 严格校验。
+  - 新增 `lore/registry.py`（D-02）：Lore Pack 目录加载、`manifest.yaml` 解析、依赖版本解析（缺依赖/版本冲突/重复 ID/非法 pack_id/未知 Schema 拒绝）。
+  - 新增 `lore/retrieval.py`（D-03）：`LoreRepository`——FTS5（trigram 分词，中英均可检索）+ 别名 LIKE 回退；所有读取路径强制 `review_status='approved'`，未批准事实永不泄漏。
+  - 新增 `lore/coverage_gate.py`（D-04）：七类裁决（ALLOW_CANON/PERSPECTIVE/ORIGINAL/DECORATIVE/RETRY_CONSTRAINED/BLOCK_UNCOVERED/BLOCK_CONFLICT）；hard 需求缺失时 `hard_blocked`，禁止调用 Narrator。
+  - 新增 `lore/knowledge_filter.py`（D-05）：角色知识（knows/believes/doubts/heard_rumor/unknown）阈值过滤；百科解锁绝不改变角色知识。
+  - 新增 `canon_guard/claim_guard.py`（D-06）：canon claim 必须有批准的 fact_id、越界原创实体、decorative 夹带断言、引用不在请求中的事实一律拒绝。
+  - 新增 `llm/intent.py`（E-04）：IntentParser——元命令永不进入 LLM；低置信度攻击/消耗/不可逆行动与未解析引用要求澄清；离线关键词回退。
+  - 新增 `llm/context_builder.py`（E-05）：上下文只含角色可见状态 + 通过 Lore Gate 与知识过滤的批准事实。
+  - 新增 `llm/output_guard.py`（E-06）：Schema/事件白名单/状态权威/Claim/年龄适配守卫，失败仅重试一次，再失败走模板降级，非法文本永不提交。
+  - 迁移 0002：`lore_facts_fts` FTS5 虚拟表（trigram）。
+  - 测试：154 项通过（Unit + Contract），Ruff 与 MyPy strict（45 文件）全绿。
+  - 状态：仍未接入生产 LLM 与真实 40K Lore；下一批为完整生命系统（B-04…B-08、G-06、E-07）。
+
+## 2026-09-02
+
 - 开发（第二批）：确定性教程片段 B-01/B-02/B-03、C-03/C-04、F-01/F-02、G-02。
   - 新增 `rules/rng.py`（单一随机入口，可注入骰点、可复现种子）与 `rules/checks.py`（属性范围、难度档位、技能加值表、Modifier 去重与来源校验、d100 目标钳制 5–95、01/100 特殊结果、成功幅度）。
   - 新增 `persistence/repositories.py`：`CampaignRepository`（事件追加、乐观版本冲突、快照+尾部重放、从零重放、篡改检测）、`commit_turn`（回合原子提交 + 每 20 回合快照）。`CampaignCreated` 支持初始属性。

@@ -15,7 +15,7 @@ from noosphere40k.persistence.migrations import MIGRATIONS
 def test_fresh_database_auto_migrates(tmp_path: Path) -> None:
     engine = open_engine(tmp_path / "test.db")
     applied = run_migrations(engine, MIGRATIONS)
-    assert [m.version for m in applied] == [1]
+    assert [m.version for m in applied] == [1, 2]
     with engine.connect() as conn:
         tables = {row[0] for row in conn.execute(text(
             "SELECT name FROM sqlite_master WHERE type='table'"
@@ -52,13 +52,13 @@ def test_migration_failure_rolls_back_and_keeps_file(tmp_path: Path) -> None:
     engine = open_engine(db_path)
     run_migrations(engine, MIGRATIONS)
 
-    bad = Migration(version=2, name="bad", statements=("SELECT * FROM does_not_exist",))
+    bad = Migration(version=99, name="bad", statements=("SELECT * FROM does_not_exist",))
     with pytest.raises(MigrationFailedError):
         run_migrations(engine, [*MIGRATIONS, bad])
 
     with engine.connect() as conn:
         count = conn.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar()
-    assert count == 1
+    assert count == len(MIGRATIONS)
     assert db_path.exists()
 
 

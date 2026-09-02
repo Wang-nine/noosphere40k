@@ -1,0 +1,1 @@
+"""Canon Guard package: claim, entity, whitelist and age-content checks (D-06 first)."""

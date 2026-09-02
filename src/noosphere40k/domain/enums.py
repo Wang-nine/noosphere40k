@@ -115,6 +115,29 @@ class EventOrigin(StrEnum):
     SYSTEM = "system"
 
 
+class ActionType(StrEnum):
+    OBSERVE = "observe"
+    MOVE = "move"
+    SPEAK = "speak"
+    ASK = "ask"
+    USE_ITEM = "use_item"
+    WORK = "work"
+    STUDY = "study"
+    REST = "rest"
+    ATTACK = "attack"
+    DEFEND = "defend"
+    FLEE = "flee"
+    CUSTOM = "custom"
+
+
+class ClaimType(StrEnum):
+    CANON = "canon"
+    PERSPECTIVE = "perspective"
+    GAME_ORIGINAL = "game_original"
+    CAMPAIGN_EVENT = "campaign_event"
+    DECORATIVE = "decorative"
+
+
 class ErrorCode(StrEnum):
     E_CONFIG_INVALID = "E_CONFIG_INVALID"
     E_PROVIDER_UNAVAILABLE = "E_PROVIDER_UNAVAILABLE"
