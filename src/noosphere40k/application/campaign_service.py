@@ -67,6 +67,9 @@ class TutorialService:
         self.pack = pack or load_pack_json(TUTORIAL_PACK_PATH)
         self.rng = rng or RngService(seed=42)
         self._scenes = {s.scene_id: s for s in self.pack.scenes}
+        from noosphere40k.lore.retrieval import LoreRepository
+
+        self.lore = LoreRepository(repo.engine)
 
     # ---- creation ----
 

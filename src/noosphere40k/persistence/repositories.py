@@ -247,6 +247,14 @@ class CampaignRepository:
                 {"s": status, "now": _now(), "cid": campaign_id},
             )
 
+    def update_settings(self, campaign_id: str, settings_json: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("UPDATE campaigns SET settings_json = :j, updated_at_utc = :now "
+                     "WHERE campaign_id = :cid"),
+                {"j": settings_json, "now": _now(), "cid": campaign_id},
+            )
+
     def should_snapshot(self, sequence: int) -> bool:
         return sequence > 0 and sequence % SNAPSHOT_INTERVAL == 0
 

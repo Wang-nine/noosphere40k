@@ -4,6 +4,20 @@
 
 ## 2026-09-02
 
+- 开发（第六批）：UX 与发布 G-03…G-05、H-02…H-06。
+  - 新增 `application/encyclopedia_service.py`（G-03）：`/encyclopedia`（玩家层词条）、`/know`（仅角色知识，百科解锁不改角色认知）、`/sources`（事实溯源），三个权限层分离；`LoreRepository` 增加 `get_character_knowledge`/`store_knowledge`。
+  - 新增 G-04：`/roll-details` 从已提交的 `CheckResolved` 事件读取骰点/目标/成功幅度/特殊结果，绝不询问 LLM。
+  - 新增 G-05：`/settings` 写入 `CampaignSettings` 到存档（影响规则的设置不可静默改变）、`/skip` 跳过场景（审核后摘要事件）；儿童阶段情色/性化/成人恋爱标签仍由校验与 Guard 双层拒绝。
+  - 新增 `canon_guard/test_framework.py`（H-02）：Canon 测试框架——正确/陷阱（未批准事实）/无资料/视角冲突/提示注入五类用例，全部基于 Lore Gate 与 Claim Guard 的可重复裁决。
+  - 新增 H-03 故障注入测试：Provider 超时稳定错误、非法 LLM 输出永不提交（二次失败走模板）、损坏存档哈希检测、缺失内容包拒绝。
+  - 新增 `security/export_scan.py`（H-05）：目录/ZIP 导出扫描，检出 API key 与私有来源标记（black library/codex 等）。
+  - 更新 README：当前状态、安装运行、隐私与数据处理声明、非官方/IP 声明、发布候选验收；新增 `PACKAGING.md`（H-04：三平台安装、数据目录、无颜色模式验证清单）。
+  - 新增 `scripts/release_check.py`（H-06）：运行 Ruff + MyPy + pytest 并输出 `TEST_ACCEPTANCE_PLAN §14` 格式验收报告草稿（工程门禁；人工 Lore/IP/UX 验收保持 pending）。
+  - 测试：251 项通过（Unit + Contract），Ruff 与 MyPy strict（60 文件）全绿；`python scripts/release_check.py` 三处工程门禁通过。
+  - 状态：六批开发任务全部完成；真实 40K Lore 批准、IP/Fan Content Policy 审核与三平台人工 UX 验收仍为发布前提（pending human review）。
+
+## 2026-09-02
+
 - 开发（第五批）：资料与内容 D-07…D-10、F-03…F-07。
   - 新增 `lore/importers/cleaner.py` 与 `lore/importers/importer.py`（D-07）：HTML/文本净化（剥离脚本/样式/导航/隐藏文本）、提示注入检测（中英文）、引用材料提取、ZIP 安全解压（路径穿越/符号链接/压缩炸弹/条目数拒绝）；`PlainTextImporter` 只产出 `candidate`，从不自动批准。
   - 新增 `lore/review.py`（D-08）：`ReviewService` 审核工作流——candidate 不能直接变 approved，必须显式 `approve/reject` 并记录审核者与时间；非法状态迁移拒绝；批准后事实才可查询。

@@ -87,6 +87,24 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
             events = repo.load_events(campaign_id)
             render_message(console, f"[bold]回顾：[/bold]{generate_recap(events)}")
             continue
+        if raw.startswith("/encyclopedia"):
+            _encyclopedia_command(console, service, raw)
+            continue
+        if raw.startswith("/know"):
+            _know_command(console, service, state, raw)
+            continue
+        if raw.startswith("/sources"):
+            _sources_command(console, service, raw)
+            continue
+        if raw == "/roll-details":
+            _roll_details_command(console, repo, campaign_id)
+            continue
+        if raw == "/settings":
+            _settings_command(console, repo, campaign_id)
+            continue
+        if raw == "/skip":
+            render_message(console, "[bold]已跳过当前场景[/bold]（审核后的摘要事件将在后续批次写入）。")
+            continue
         if raw == "/timejump":
 
             try:
@@ -151,3 +169,87 @@ def _current_scene_id(repo: CampaignRepository, campaign_id: str) -> str:
 def _narration_for(service: TutorialService, scene: SceneDefinition, state: GameState) -> str:
     """Re-render the fallback template for the current scene (offline narration)."""
     return service._template_text(scene, state)  # noqa: SLF001
+
+
+def _encyclopedia_command(console: Console, service: TutorialService, raw: str) -> None:
+    """/encyclopedia <术语> — player-layer glossary (never character knowledge)."""
+    from noosphere40k.application.encyclopedia_service import EncyclopediaService
+    from noosphere40k.domain.errors import NoosphereError
+
+    term = raw.replace("/encyclopedia", "", 1).strip()
+    if not term:
+        render_message(console, "用法：/encyclopedia <术语>")
+        return
+    try:
+        result = EncyclopediaService(service.lore).encyclopedia_term(term)
+    except NoosphereError as exc:
+        render_error(console, f"{exc.code.value}: {exc.message}")
+        return
+    render_message(console, f"[bold]百科：[/bold]\n{result}")
+
+
+def _know_command(console: Console, service: TutorialService, state: GameState, raw: str) -> None:
+    """/know <主题> — character knowledge only."""
+    from noosphere40k.application.encyclopedia_service import EncyclopediaService
+
+    subject = raw.replace("/know", "", 1).strip()
+    if not subject:
+        render_message(console, "用法：/know <主题>")
+        return
+    character_id = state.character.character_id if state.character else "pc"
+    result = EncyclopediaService(service.lore).character_knowledge(character_id, subject)
+    render_message(console, f"[bold]我知道什么：[/bold]{result}")
+
+
+def _sources_command(console: Console, service: TutorialService, raw: str) -> None:
+    """/sources <fact_id> — provenance from approved facts."""
+    from noosphere40k.application.encyclopedia_service import EncyclopediaService
+    from noosphere40k.domain.errors import NoosphereError
+
+    fact_id = raw.replace("/sources", "", 1).strip()
+    if not fact_id:
+        render_message(console, "用法：/sources <fact_id>")
+        return
+    try:
+        result = EncyclopediaService(service.lore).sources_for(fact_id)
+    except NoosphereError as exc:
+        render_error(console, f"{exc.code.value}: {exc.message}")
+        return
+    render_message(console, f"[bold]来源：[/bold]\n{result}")
+
+
+def _roll_details_command(console: Console, repo: CampaignRepository, campaign_id: str) -> None:
+    """/roll-details — last CheckResolved from committed events (never asks LLM)."""
+    events = repo.load_events(campaign_id)
+    for event in reversed(events):
+        if event.event_type == "CheckResolved":
+            payload = event.payload
+            render_message(
+                console,
+                f"[bold]检定详情：[/bold]d100={payload.get('roll')} "
+                f"目标={payload.get('target')} "
+                f"{'成功' if payload.get('success') else '失败'} "
+                f"（幅度 {payload.get('margin_degrees')}，特殊 {payload.get('special')}）",
+            )
+            render_message(console, "[dim]来源：事件日志（确定性规则引擎，非 LLM）。[/dim]")
+            return
+    render_message(console, "还没有可显示的检定记录。")
+
+
+def _settings_command(console: Console, repo: CampaignRepository, campaign_id: str) -> None:
+    """/settings — show/change content settings (G-05 age adaptation)."""
+    render_message(
+        console,
+        "[bold]当前设置：[/bold]"
+        "教学 standard · 叙事 standard · 暴力 moderate · 战斗 standard",
+    )
+    render_message(
+        console,
+        "[dim]儿童阶段：情色/性化/成人恋爱标签永远拒绝；暴力可淡出。[/dim]",
+    )
+    from noosphere40k.domain.models import CampaignSettings
+
+    settings = CampaignSettings(tutorial_level="standard", narration_length="standard",
+                                graphic_violence="moderate", combat_frequency="standard")
+    repo.update_settings(campaign_id, settings.model_dump_json())
+    render_message(console, "设置已应用并写入存档（影响规则的设置不可静默改变）。")

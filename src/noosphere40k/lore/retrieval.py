@@ -12,6 +12,7 @@ from typing import Any
 
 from sqlalchemy import Engine, text
 
+from noosphere40k.domain.models import KnowledgeRecord
 from noosphere40k.lore.schemas import (
     GlossaryEntry,
     LoreEntity,
@@ -25,6 +26,28 @@ class LoreRepository:
         self.engine = engine
 
     # ---- writes (pack import) ----
+
+    def store_knowledge(self, record: KnowledgeRecord) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT OR REPLACE INTO knowledge_records "
+                    "(owner_character_id, subject_id, status, reliability_basis_points, "
+                    "learned_at_event_id, learned_from_character_id, source_viewpoint, "
+                    "superseded_by_event_id) VALUES "
+                    "(:o, :s, :st, :r, :l, :lf, :sv, :sup)"
+                ),
+                {
+                    "o": record.owner_character_id,
+                    "s": record.subject_id,
+                    "st": record.status,
+                    "r": record.reliability_basis_points,
+                    "l": record.learned_at_event_id,
+                    "lf": record.learned_from_character_id,
+                    "sv": record.source_viewpoint,
+                    "sup": record.superseded_by_event_id,
+                },
+            )
 
     def store_source(self, source: SourceRecord) -> None:
         with self.engine.begin() as conn:
@@ -235,6 +258,28 @@ class LoreRepository:
             viewpoint_warning=row[9],
             spoiler_level=row[10],
             source_refs=json.loads(row[11]),
+        )
+
+    def get_character_knowledge(self, owner_character_id: str, subject_id: str) -> KnowledgeRecord | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT owner_character_id, subject_id, status, reliability_basis_points, "
+                     "learned_at_event_id, learned_from_character_id, source_viewpoint, "
+                     "superseded_by_event_id FROM knowledge_records "
+                     "WHERE owner_character_id = :o AND subject_id = :s"),
+                {"o": owner_character_id, "s": subject_id},
+            ).fetchone()
+        if row is None:
+            return None
+        return KnowledgeRecord(
+            owner_character_id=row[0],
+            subject_id=row[1],
+            status=row[2],
+            reliability_basis_points=row[3],
+            learned_at_event_id=row[4],
+            learned_from_character_id=row[5],
+            source_viewpoint=row[6],
+            superseded_by_event_id=row[7],
         )
 
     def search(self, query: str, *, limit: int = 10) -> list[LoreFact]:
