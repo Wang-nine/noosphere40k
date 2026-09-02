@@ -34,6 +34,43 @@ def test_new_command_creates_campaign(tmp_path) -> None:
     assert "已创建战役 campaign.cli.test" in result.output
 
 
+def test_new_default_id_is_unique(tmp_path) -> None:
+    """Two consecutive `new` without --campaign-id must not collide."""
+    r1 = runner.invoke(
+        app,
+        ["new", "人生", "--character", "A"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    assert r1.exit_code == 0
+    r2 = runner.invoke(
+        app,
+        ["new", "人生", "--character", "B"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    assert r2.exit_code == 0
+    assert "已创建战役" in r2.output
+    assert "已存在" not in r2.output
+
+
+def test_new_with_existing_custom_id_errors(tmp_path) -> None:
+    runner.invoke(
+        app,
+        ["new", "测试", "--campaign-id", "campaign.cli.dup", "--character", "A"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    result = runner.invoke(
+        app,
+        ["new", "测试", "--campaign-id", "campaign.cli.dup", "--character", "B"],
+        env={"NOOSPHERE_DATA_DIR": str(tmp_path)},
+        input="/quit\n",
+    )
+    assert result.exit_code == 1
+    assert "已存在" in result.output
+
+
 def test_continue_lists_campaigns(tmp_path) -> None:
     result = runner.invoke(
         app,

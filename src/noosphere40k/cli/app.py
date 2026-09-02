@@ -71,6 +71,28 @@ def saves_command(action: str | None) -> CommandResult:
     return not_implemented_command(f"saves {action or ''}".strip())
 
 
+def _unique_campaign_id(name: str) -> str:
+    """A default campaign id is always unique (never collides with an existing save)."""
+    import uuid
+
+    base = name or "default"
+    return f"campaign.tutorial.{base}.{uuid.uuid4().hex[:6]}"
+
+
+def _campaign_exists(db_path: Path, campaign_id: str) -> bool:
+    from sqlalchemy import text
+
+    from noosphere40k.persistence.db import open_engine
+
+    engine = open_engine(db_path)
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT campaign_id FROM campaigns WHERE campaign_id = :cid"),
+            {"cid": campaign_id},
+        ).fetchone()
+    return row is not None
+
+
 def _list_campaigns(db_path: Path) -> list[str]:
     from sqlalchemy import text
 
@@ -118,9 +140,12 @@ def new(
 
     settings = load_settings(cli_overrides={})
     _ensure_db(settings)
-    cid = campaign_id or f"campaign.tutorial.{name or 'default'}"
+    cid = campaign_id or _unique_campaign_id(name)
     repo = CampaignRepository.at(settings.db_path)
     service = TutorialService(repo)
+    if _campaign_exists(settings.db_path, cid):
+        typer.echo(f"战役 {cid} 已存在。如需新建，请用 --campaign-id 指定不同 ID。")
+        raise typer.Exit(code=1)
     service.create_campaign(cid, name or "未命名", display_name=character)
     typer.echo(f"已创建战役 {cid}（角色：{character}）")
     console = __import__("noosphere40k.cli.render", fromlist=["make_console"]).make_console(no_color=no_color)

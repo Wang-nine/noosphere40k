@@ -4,6 +4,13 @@
 
 ## 2026-09-02
 
+- 修复：`noosphere new` 不带 `--campaign-id` 时的默认战役 ID 冲突。
+  - 默认 ID 现在自动追加唯一后缀（`campaign.tutorial.<name>.<hex>`），连续新建不再撞 `UNIQUE constraint`。
+  - 若用户指定 `--campaign-id` 但已存在，给出友好提示并退出码 1（不再裸抛 IntegrityError）。
+  - 测试：274 项通过（新增默认 ID 唯一性、重复自定义 ID 报错用例），Ruff 与 MyPy strict（63 文件）全绿。
+
+## 2026-09-02
+
 - 新增：`noosphere saves delete` 删除存档命令（C-05 补充）。
   - `CampaignRepository.delete_campaign`：单事务原子删除指定战役及其事件/快照/角色/关系/内容锁，并按角色 ID 清理 `knowledge_records`/`encyclopedia_unlocks`；不存在返回 False，不影响其他战役。
   - CLI：交互式输入战役 ID + `[y/N]` 二次确认；已取消/找不到均有明确提示。
