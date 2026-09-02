@@ -4,6 +4,17 @@
 
 ## 2026-09-02
 
+- 开发（E-02 补充 + 真实 LLM 验证）：接入 OpenAI-compatible Provider。
+  - 新增 `llm/openai_compatible.py`：`OpenAICompatibleProvider`——调用 `/chat/completions`，`response_format=json_schema` 严格结构化输出，5xx/429 自动重试，超时/HTTP/解析错误映射为稳定错误码；key 仅存内存、日志脱敏；`/models` healthcheck。
+  - 新增 `llm/factory.py`：`build_provider`——有 key+base_url+model 时用真实 Provider，否则回退离线 Stub（永不误发网络）。
+  - 新增 `scripts/verify_llm.py`：真实 LLM 冒烟验证（healthcheck + 一次结构化生成，key 只读环境变量、不打印不落盘）；`scripts/probe_auth.py`：网关鉴权方式探测工具。
+  - 依赖：新增 `httpx>=0.27`。
+  - 真实验证：`https://opencode.ai/zen/go/v1` + `deepseek-v4-flash`，healthcheck ok，`NarrationResponse` 结构化中文叙事解析成功。
+  - 测试：262 项通过（新增 openai provider 离线 MockTransport 契约测试与 factory 测试），Ruff 与 MyPy strict（62 文件）全绿。
+  - 状态：真实 LLM 通道已打通；测试数据与 key 均未上传，key 仅以临时环境变量使用。
+
+## 2026-09-02
+
 - 开发（第六批）：UX 与发布 G-03…G-05、H-02…H-06。
   - 新增 `application/encyclopedia_service.py`（G-03）：`/encyclopedia`（玩家层词条）、`/know`（仅角色知识，百科解锁不改角色认知）、`/sources`（事实溯源），三个权限层分离；`LoreRepository` 增加 `get_character_knowledge`/`store_knowledge`。
   - 新增 G-04：`/roll-details` 从已提交的 `CheckResolved` 事件读取骰点/目标/成功幅度/特殊结果，绝不询问 LLM。
