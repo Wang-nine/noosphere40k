@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import typer
 
@@ -70,6 +71,26 @@ def saves_command(action: str | None) -> CommandResult:
     return not_implemented_command(f"saves {action or ''}".strip())
 
 
+def _list_campaigns(db_path: Path) -> list[str]:
+    from sqlalchemy import text
+
+    from noosphere40k.persistence.db import open_engine
+
+    engine = open_engine(db_path)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("SELECT campaign_id FROM campaigns ORDER BY created_at_utc")
+        ).fetchall()
+    return [row[0] for row in rows]
+
+
+def _ensure_db(settings: AppSettings) -> None:
+    """Run migrations so the repository can be used (idempotent)."""
+    engine = open_engine(settings.db_path)
+    run_migrations(engine, MIGRATIONS)
+    engine.dispose()
+
+
 @app.command()
 def version() -> None:
     """Print the installed version."""
@@ -85,20 +106,69 @@ def doctor() -> None:
 @app.command()
 def new(
     name: str = typer.Argument("", help="Campaign name"),
+    character: str = typer.Option("无名者", "--character", help="角色名"),
+    campaign_id: str = typer.Option("", "--campaign-id", help="自定义战役 ID"),
+    no_color: bool = typer.Option(False, "--no-color", help="禁用颜色"),
 ) -> None:
-    """Create a new campaign (placeholder until C-03)."""
-    _render(not_implemented_command("new"))
+    """Create a new campaign and enter the offline tutorial loop."""
+    from noosphere40k.application.campaign_service import TutorialService
+    from noosphere40k.cli.game import run_game_loop
+    from noosphere40k.config.settings import load_settings
+    from noosphere40k.persistence.repositories import CampaignRepository
+
+    settings = load_settings(cli_overrides={})
+    _ensure_db(settings)
+    cid = campaign_id or f"campaign.tutorial.{name or 'default'}"
+    repo = CampaignRepository.at(settings.db_path)
+    service = TutorialService(repo)
+    service.create_campaign(cid, name or "未命名", display_name=character)
+    typer.echo(f"已创建战役 {cid}（角色：{character}）")
+    console = __import__("noosphere40k.cli.render", fromlist=["make_console"]).make_console(no_color=no_color)
+    raise typer.Exit(code=run_game_loop(db_path=settings.db_path, campaign_id=cid, console=console))
 
 
 @app.command("continue")
 def continue_(campaign_id: str | None = typer.Argument(None)) -> None:
-    """Continue an existing campaign (placeholder until C-03)."""
-    _render(not_implemented_command("continue"))
+    """Continue an existing campaign (offline tutorial loop)."""
+    from noosphere40k.cli.game import run_game_loop
+    from noosphere40k.config.settings import load_settings
+
+    settings = load_settings(cli_overrides={})
+    _ensure_db(settings)
+    if campaign_id is None:
+        campaigns = _list_campaigns(settings.db_path)
+        if not campaigns:
+            typer.echo("没有可继续的战役。先运行 `noosphere new`。")
+            raise typer.Exit(code=1)
+        typer.echo("可用战役：")
+        for index, cid in enumerate(campaigns, start=1):
+            typer.echo(f"  {index}. {cid}")
+        try:
+            picked = int(typer.prompt("选择战役编号"))
+        except (ValueError, KeyboardInterrupt):
+            raise typer.Exit(code=1) from None
+        if not 1 <= picked <= len(campaigns):
+            typer.echo("编号无效。")
+            raise typer.Exit(code=1)
+        campaign_id = campaigns[picked - 1]
+    raise typer.Exit(code=run_game_loop(db_path=settings.db_path, campaign_id=campaign_id))
 
 
 @app.command()
 def saves(action: str | None = typer.Argument(None, help="list | export | import")) -> None:
-    """Save utilities (placeholder until C-03/C-06)."""
+    """Save utilities: `saves list` lists campaigns."""
+    from noosphere40k.config.settings import load_settings
+
+    if action == "list":
+        settings = load_settings(cli_overrides={})
+        _ensure_db(settings)
+        campaigns = _list_campaigns(settings.db_path)
+        if not campaigns:
+            typer.echo("（没有战役存档）")
+            raise typer.Exit(code=0)
+        for index, cid in enumerate(campaigns, start=1):
+            typer.echo(f"{index}. {cid}")
+        raise typer.Exit(code=0)
     _render(saves_command(action))
 
 

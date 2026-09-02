@@ -2,6 +2,18 @@
 
 > 规则：任何文档或代码变更必须在顶部追加记录：日期、变更类型（新增/修改/整理）及摘要。接手的 AI 改动后先更新本文件。
 
+## 2026-09-02
+
+- 开发（第二批）：确定性教程片段 B-01/B-02/B-03、C-03/C-04、F-01/F-02、G-02。
+  - 新增 `rules/rng.py`（单一随机入口，可注入骰点、可复现种子）与 `rules/checks.py`（属性范围、难度档位、技能加值表、Modifier 去重与来源校验、d100 目标钳制 5–95、01/100 特殊结果、成功幅度）。
+  - 新增 `persistence/repositories.py`：`CampaignRepository`（事件追加、乐观版本冲突、快照+尾部重放、从零重放、篡改检测）、`commit_turn`（回合原子提交 + 每 20 回合快照）。`CampaignCreated` 支持初始属性。
+  - 新增 `content/schemas.py`、`content/validator.py`、`content/loader.py`（F-01：场景/转换/预测/LoreRequirement Schema，含 fallback 模板、儿童年龄标签与重复 ID 校验）。
+  - 新增 `content/scenario_packs/tutorial_hive_worker/pack.json`（F-02：巢都工人家庭“配给日→红袍人→邻居消失”三段无 LLM 教程）。
+  - 新增 `application/campaign_service.py`（离线教程管线：创建、编号/自然语言行动、d100 检定、事件哈希盖章）与 `cli/render.py`、`cli/game.py`（G-02：游戏循环，支持编号与自由输入，`--no-color`）。
+  - `noosphere new`/`continue`/`saves list` 从占位变为可用；`saves export/import` 仍为占位（C-06）。
+  - 测试：100 项通过（Unit + Contract + 端到端教程），Ruff 与 MyPy strict（34 文件）全绿。
+  - 状态：仍未接入真实 40K Lore 与生产 LLM；下一批为 Lore 与反幻觉（D-02…D-06、E-03…E-06）。
+
 ## 2026-09-01
 
 - 开发（第一批）：交付 `IMPLEMENTATION_BACKLOG.md` 首批范围 A-01/A-02/A-03、C-01/C-02、D-01、E-01、G-01、H-01 的可安装工程骨架。

@@ -85,6 +85,28 @@ class EntityOrigin(StrEnum):
     GAME_ORIGINAL = "game_original"
 
 
+class RiskLevel(StrEnum):
+    TRIVIAL = "trivial"
+    LOW = "low"
+    STANDARD = "standard"
+    HIGH = "high"
+    LETHAL = "lethal"
+
+
+class RngVisibility(StrEnum):
+    OPEN = "open"
+    HIDDEN = "hidden"
+
+
+class ModifierSourceType(StrEnum):
+    RULE = "rule"
+    SKILL = "skill"
+    TRAIT = "trait"
+    ITEM = "item"
+    CONDITION = "condition"
+    SCENE = "scene"
+
+
 class EventOrigin(StrEnum):
     PLAYER = "player"
     RULES = "rules"

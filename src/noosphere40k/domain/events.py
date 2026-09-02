@@ -27,6 +27,18 @@ from noosphere40k.domain.models import (
 
 EVENT_SCHEMA_VERSION = 1
 
+__all__ = [
+    "EVENT_SCHEMA_VERSION",
+    "EventType",
+    "LLM_FORBIDDEN_EVENT_TYPES",
+    "EventEnvelope",
+    "GameState",
+    "INITIAL_GAME_STATE",
+    "reduce_event",
+    "compute_state_hash",
+    "canonical_state_dump",
+]
+
 
 class EventType(StrEnum):
     CAMPAIGN_CREATED = "CampaignCreated"
@@ -125,6 +137,7 @@ def _created(state: GameState, event: EventEnvelope) -> GameState:
     payload = event.payload
     character = None
     if payload.get("character_id"):
+        attributes = cast(dict[str, int], payload.get("attributes")) or {}
         character = PlayerCharacter(
             character_id=payload["character_id"],
             display_name=payload.get("display_name", "Unknown"),
@@ -138,6 +151,7 @@ def _created(state: GameState, event: EventEnvelope) -> GameState:
             subjective_age_days=payload.get("subjective_age_days", payload["chronological_age_days"]),
             life_stage=payload.get("life_stage", "childhood"),
             origin_id=payload.get("origin_id", ""),
+            attributes=dict(attributes),
         )
     return state.model_copy(
         update={
@@ -232,6 +246,8 @@ REDUCERS: dict[EventType, Reducer] = {
     EventType.CHARACTER_DIED: _character_died,
     EventType.CAMPAIGN_TERMINATED: _campaign_terminated,
     EventType.SNAPSHOT_CREATED: _noop,
+    EventType.RANDOM_DRAWN: _noop,
+    EventType.CHECK_RESOLVED: _noop,
     EventType.NARRATION_RECORDED: _noop,
     EventType.PLAYER_INPUT_ACCEPTED: _noop,
     EventType.ACTION_INTENT_RESOLVED: _noop,

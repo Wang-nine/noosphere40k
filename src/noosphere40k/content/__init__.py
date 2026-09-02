@@ -1,0 +1,1 @@
+"""Content package: pack schemas, validation and loading (F-01 first)."""

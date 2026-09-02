@@ -82,7 +82,7 @@ def test_unknown_event_type_rejected() -> None:
 def test_unregistered_event_type_rejected() -> None:
     state = reduce_event(INITIAL_GAME_STATE, _campaign_created_event())
     with pytest.raises(UnknownEventError):
-        reduce_event(state, _event(2, EventType.CHECK_RESOLVED))
+        reduce_event(state, _event(2, EventType.CAMPAIGN_SETTING_CHANGED))
 
 
 def test_sequence_must_be_continuous() -> None:

@@ -1,0 +1,164 @@
+{
+  "pack_id": "scenario.tutorial_hive_worker",
+  "version": "0.1.0",
+  "schema_version": 1,
+  "dependency_pack_ids": [],
+  "scenes": [
+    {
+      "scene_id": "scene.tutorial.ration_morning",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "title": "配给日清晨",
+      "allowed_life_stages": ["childhood"],
+      "location_id": "game_original.hive_residential_ward",
+      "content_tags": ["childhood", "daily_life", "ration"],
+      "lore_requirements": {
+        "hard": [],
+        "optional": [],
+        "forbidden_topics": ["unsupported_famous_character_cameo"]
+      },
+      "objectives": [
+        {
+          "objective_id": "obj.tutorial.ration_choice",
+          "display_text": "和家人决定今日配给如何使用",
+          "completion_predicates": [
+            {"predicate_type": "choice_made", "subject_id": "choice.ration", "operator": "in", "expected": ["split", "save"]}
+          ],
+          "failure_predicates": []
+        }
+      ],
+      "action_templates": [
+        {
+          "action_template_id": "act.tutorial.split_ration",
+          "display_text": "把配给分成几份，分给家里每个人 [安全]",
+          "action_type": "custom",
+          "content_tags": ["safe", "daily_life"]
+        },
+        {
+          "action_template_id": "act.tutorial.save_ration",
+          "display_text": "留出一些配给备着 [消耗资源/学习]",
+          "action_type": "custom",
+          "content_tags": ["resource", "daily_life"]
+        },
+        {
+          "action_template_id": "act.tutorial.ask_guardian",
+          "display_text": "问母亲今天去哪里 [安全/学习]",
+          "action_type": "ask",
+          "content_tags": ["safe", "learning"]
+        }
+      ],
+      "fallback_narration_template_id": "tpl.tutorial.ration_morning",
+      "next_scene_rules": [
+        {
+          "priority": 1,
+          "predicates": [
+            {"predicate_type": "choice_made", "subject_id": "choice.ration", "operator": "any", "expected": null}
+          ],
+          "next_scene_id": "scene.tutorial.red_robed_visitor"
+        }
+      ]
+    },
+    {
+      "scene_id": "scene.tutorial.red_robed_visitor",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "title": "走廊里的红袍人",
+      "allowed_life_stages": ["childhood"],
+      "location_id": "game_original.hive_residential_ward",
+      "content_tags": ["childhood", "machine_taboo", "observation"],
+      "lore_requirements": {
+        "hard": [],
+        "optional": [],
+        "forbidden_topics": ["unsupported_famous_character_cameo"]
+      },
+      "objectives": [
+        {
+          "objective_id": "obj.tutorial.observe",
+          "display_text": "观察红袍人",
+          "completion_predicates": [
+            {"predicate_type": "check_passed", "subject_id": "check.observe_visitor", "operator": "eq", "expected": true}
+          ],
+          "failure_predicates": []
+        }
+      ],
+      "action_templates": [
+        {
+          "action_template_id": "act.tutorial.look_away",
+          "display_text": "低下头，继续赶路 [安全]",
+          "action_type": "observe",
+          "content_tags": ["safe"]
+        },
+        {
+          "action_template_id": "act.tutorial.observe_visitor",
+          "display_text": "小心观察红袍人的工具 [需检定：感知]",
+          "action_type": "observe",
+          "check_template_id": "check.observe_visitor",
+          "content_tags": ["check_required"]
+        }
+      ],
+      "fallback_narration_template_id": "tpl.tutorial.red_robed_visitor",
+      "next_scene_rules": [
+        {
+          "priority": 1,
+          "predicates": [],
+          "next_scene_id": "scene.tutorial.neighbor_missing"
+        }
+      ]
+    },
+    {
+      "scene_id": "scene.tutorial.neighbor_missing",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "title": "从登记簿上消失的邻居",
+      "allowed_life_stages": ["childhood"],
+      "location_id": "game_original.hive_residential_ward",
+      "content_tags": ["childhood", "ashen_register", "mystery"],
+      "lore_requirements": {
+        "hard": [],
+        "optional": [],
+        "forbidden_topics": ["unsupported_famous_character_cameo"]
+      },
+      "objectives": [
+        {
+          "objective_id": "obj.tutorial.notice",
+          "display_text": "注意到邻居从记录中消失",
+          "completion_predicates": [],
+          "failure_predicates": []
+        }
+      ],
+      "action_templates": [
+        {
+          "action_template_id": "act.tutorial.ask_mother",
+          "display_text": "问母亲：他们去哪了？ [安全/学习]",
+          "action_type": "ask",
+          "content_tags": ["safe", "learning"]
+        },
+        {
+          "action_template_id": "act.tutorial.stay_quiet",
+          "display_text": "把这当作一次配给错误，不再提起 [安全]",
+          "action_type": "custom",
+          "content_tags": ["safe"]
+        }
+      ],
+      "fallback_narration_template_id": "tpl.tutorial.neighbor_missing"
+    }
+  ],
+  "transitions": [],
+  "templates": [
+    {
+      "template_id": "tpl.tutorial.ration_morning",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "text": "广播里的晨祷被机器轰鸣切成断断续续的句子。母亲把你叫到配给窗前，里面只有浅浅一层口粮。她看着你，等你说点什么。\n\n{display_name}，你想怎么做？",
+      "variables": ["display_name"]
+    },
+    {
+      "template_id": "tpl.tutorial.red_robed_visitor",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "text": "走廊尽头，两个穿红袍的人正在检查一台管道机器。父亲低声说：别盯着他们看。\n\n[术语·玩家层] 这些红袍人属于机械教相关人员。你的角色目前只知道他们负责机器。",
+      "variables": []
+    },
+    {
+      "template_id": "tpl.tutorial.neighbor_missing",
+      "pack_id": "scenario.tutorial_hive_worker",
+      "text": "下午，工班登记处排着队。轮到你时，你注意到墙上贴的居住层名单里，那个总在楼梯口抽烟的老工人被划掉了。可昨天他还跟你打过招呼。\n\n母亲攥紧你的手，什么也没说。\n\n这正是你多年后才会真正理解的《灰籍》问题的第一次闪现。",
+      "variables": []
+    }
+  ]
+}
