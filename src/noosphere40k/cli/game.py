@@ -71,8 +71,8 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
         if raw == "/help":
             render_message(
                 console,
-                "/quit 退出 · /character 查看角色 · 输入编号或自然语言行动 · "
-                "无 LLM 模式使用模板叙事",
+                "/quit 退出 · /character 查看角色 · /recap 回顾 · /timejump 时间跳跃 · "
+                "输入编号或自然语言行动 · 无 LLM 模式使用模板叙事",
             )
             continue
         if raw == "/character":
@@ -80,6 +80,37 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
             continue
         if raw == "/saves":
             render_message(console, "自动存档已启用，每回合事务提交。")
+            continue
+        if raw == "/recap":
+            from noosphere40k.application.chronicle import generate_recap
+
+            events = repo.load_events(campaign_id)
+            render_message(console, f"[bold]回顾：[/bold]{generate_recap(events)}")
+            continue
+        if raw == "/timejump":
+
+            try:
+                days = int(console.input("跳过多少天？> ").strip())
+            except (ValueError, EOFError):
+                render_message(console, "已取消时间跳跃（无事件产生）。")
+                continue
+            preview = service.time_jump(
+                campaign_id=campaign_id, state=state, days=days, confirm=False
+            )
+            render_message(console, preview.narration)
+            try:
+                confirm = console.input("确认时间跳跃？[y/N] > ").strip().lower()
+            except EOFError:
+                confirm = "n"
+            if confirm not in ("y", "yes"):
+                render_message(console, "已取消时间跳跃（无事件产生）。")
+                continue
+            playback = service.time_jump(
+                campaign_id=campaign_id, state=state, days=days, confirm=True
+            )
+            state = repo.load_consistent_snapshot(campaign_id)
+            render_message(console, playback.narration)
+            render_state_summary(console, state)
             continue
 
         choice = _parse_choice(raw)

@@ -4,6 +4,19 @@
 
 ## 2026-09-02
 
+- 开发（第四批）：完整生命系统 B-04…B-08、G-06、E-07。
+  - 新增 `rules/aging.py`（B-04）：生命阶段参考年龄区间、阶段只能向前/进入 terminal、`LifeTransitionService`（预览纯函数无副作用、结算确定性、未知 aging_ruleset/倒推阶段/from_stage 不匹配拒绝）；LLM 无直接改龄接口。
+  - 扩展 reducer：`TimeAdvanced` 推进年龄天数、`SkillProgressed` 更新技能与等级（进度→untrained/trained/specialist/master）、`ConditionApplied/Removed`、`WoundApplied/Changed`、`VocationStarted/Ended`、`GoalAdded/Updated`；`CharacterDied` 使战役进入 TERMINAL。
+  - 新增 `rules/lifepath.py`（B-05）：`VocationDefinition` 职业前置检查（年龄、技能等级、关系、内容包）、技能进度→等级映射。
+  - 新增 `rules/wounds.py`（B-06）：腐化阈值（notable/terminal，终局可溯源事件链）、压力阈值（疲劳/崩溃）、伤势严重度映射。
+  - 新增 `rules/combat.py`（B-07）：确定性简化战斗——命中检定、伤害、护甲、穿透、掩体、伤势→死亡；撤退/压制等非杀伤选项；LLM 无权改数值。
+  - 新增 `application/chronicle.py`（B-08/E-07）：`build_chronicle` 从已提交事件生成一致年表（死亡→TERMINAL），`generate_recap` 只总结不新增。
+  - 新增 G-06：CLI `/timejump`（先预览→确认→结算；取消产生零事件）与 `/recap`（E-07 回顾）。
+  - 测试：202 项通过（Unit + Contract），Ruff 与 MyPy strict（50 文件）全绿。
+  - 状态：仍未接入生产 LLM 与真实 40K Lore；下一批为资料与内容（D-07…D-10、F-03…F-07）。
+
+## 2026-09-02
+
 - 开发（第三批）：Lore 与反幻觉 D-02…D-06、E-03…E-06。
   - 新增 `llm/schemas.py`（E-03）：`NarrationRequest`/`NarrationResponse`、`ActionIntent`、`RuleResolution`、显示模型与 LLM 提议事件白名单；全部 `extra=forbid` 严格校验。
   - 新增 `lore/registry.py`（D-02）：Lore Pack 目录加载、`manifest.yaml` 解析、依赖版本解析（缺依赖/版本冲突/重复 ID/非法 pack_id/未知 Schema 拒绝）。

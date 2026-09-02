@@ -165,7 +165,218 @@ def _created(state: GameState, event: EventEnvelope) -> GameState:
 
 
 def _time_advanced(state: GameState, event: EventEnvelope) -> GameState:
-    return state.model_copy(update={"world_time": event.world_time, "sequence": event.sequence})
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"world_time": event.world_time, "sequence": event.sequence})
+    days = cast(int, event.payload.get("days", 0))
+    new_age = character.chronological_age_days + days
+    new_subjective = character.subjective_age_days + days
+    return state.model_copy(
+        update={
+            "world_time": event.world_time,
+            "sequence": event.sequence,
+            "character": character.model_copy(
+                update={
+                    "chronological_age_days": new_age,
+                    "subjective_age_days": new_subjective,
+                }
+            ),
+        }
+    )
+
+
+def _skill_progressed(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    skill_id = str(event.payload["skill_id"])
+    progress = cast(int, event.payload.get("progress", 0))
+    skills = dict(character.skills)
+    entry = dict(skills.get(skill_id, {"rank": "untrained", "progress": 0, "learned_from_event_ids": []}))
+    entry["progress"] = int(cast(int, entry.get("progress", 0))) + progress
+    learned = list(cast(list[object], entry.get("learned_from_event_ids", [])))
+    cause = event.payload.get("learned_from_event_id")
+    if cause and cause not in learned:
+        learned.append(str(cause))
+    entry["learned_from_event_ids"] = learned
+    rank = _rank_from_progress(int(cast(int, entry["progress"])))
+    entry["rank"] = rank
+    skills[skill_id] = entry
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"skills": skills}),
+        }
+    )
+
+
+def _rank_from_progress(progress: int) -> str:
+    if progress >= 60:
+        return "master"
+    if progress >= 35:
+        return "specialist"
+    if progress >= 10:
+        return "trained"
+    return "untrained"
+
+
+def _condition_applied(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    from noosphere40k.domain.models import Condition
+
+    condition = Condition(
+        condition_id=str(event.payload["condition_id"]),
+        severity=cast(int, event.payload.get("severity", 1)),
+        applied_event_id=event.event_id,
+    )
+    conditions = [c for c in character.conditions if c.condition_id != condition.condition_id]
+    conditions.append(condition)
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"conditions": conditions}),
+        }
+    )
+
+
+def _condition_removed(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    condition_id = str(event.payload["condition_id"])
+    conditions = [c for c in character.conditions if c.condition_id != condition_id]
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"conditions": conditions}),
+        }
+    )
+
+
+def _wound_applied(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    from noosphere40k.domain.models import Wound
+
+    wound = Wound(
+        wound_id=str(event.payload["wound_id"]),
+        location=str(event.payload.get("location", "body")),
+        severity=str(event.payload.get("severity", "minor")),
+        cause_event_id=event.event_id,
+        treatment_state="untreated",
+    )
+    wounds = [w for w in character.wounds if w.wound_id != wound.wound_id]
+    wounds.append(wound)
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"wounds": wounds}),
+        }
+    )
+
+
+def _wound_changed(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    wound_id = str(event.payload["wound_id"])
+    severity = str(event.payload.get("severity"))
+    treatment = str(event.payload.get("treatment_state"))
+    wounds = []
+    for wound in character.wounds:
+        if wound.wound_id == wound_id:
+            wounds.append(wound.model_copy(update={"severity": severity, "treatment_state": treatment}))
+        else:
+            wounds.append(wound)
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"wounds": wounds}),
+        }
+    )
+
+
+def _vocation_started(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    from noosphere40k.domain.models import VocationPeriod
+
+    vocation = VocationPeriod(
+        vocation_id=str(event.payload["vocation_id"]),
+        started_event_id=event.event_id,
+        organization_id=event.payload.get("organization_id"),
+    )
+    history = list(character.vocation_history) + [vocation]
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"vocation_history": history}),
+        }
+    )
+
+
+def _vocation_ended(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    vocation_id = str(event.payload["vocation_id"])
+    history = []
+    for vocation in character.vocation_history:
+        if vocation.vocation_id == vocation_id and vocation.ended_event_id is None:
+            history.append(vocation.model_copy(update={"ended_event_id": event.event_id}))
+        else:
+            history.append(vocation)
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"vocation_history": history}),
+        }
+    )
+
+
+def _goal_added(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    from noosphere40k.domain.models import Goal
+
+    goal = Goal(
+        goal_id=str(event.payload["goal_id"]),
+        description=str(event.payload.get("description", "")),
+        status="active",
+        created_event_id=event.event_id,
+    )
+    goals = [g for g in character.goals if g.goal_id != goal.goal_id] + [goal]
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"goals": goals}),
+        }
+    )
+
+
+def _goal_updated(state: GameState, event: EventEnvelope) -> GameState:
+    character = state.character
+    if character is None:
+        return state.model_copy(update={"sequence": event.sequence})
+    goal_id = str(event.payload["goal_id"])
+    status = str(event.payload.get("status", character.life_stage))
+    goals = []
+    for goal in character.goals:
+        if goal.goal_id == goal_id:
+            goals.append(goal.model_copy(update={"status": status}))
+        else:
+            goals.append(goal)
+    return state.model_copy(
+        update={
+            "sequence": event.sequence,
+            "character": character.model_copy(update={"goals": goals}),
+        }
+    )
 
 
 def _life_stage_changed(state: GameState, event: EventEnvelope) -> GameState:
@@ -245,28 +456,28 @@ REDUCERS: dict[EventType, Reducer] = {
     EventType.RELATIONSHIP_CHANGED: _relationship_changed,
     EventType.CHARACTER_DIED: _character_died,
     EventType.CAMPAIGN_TERMINATED: _campaign_terminated,
+    EventType.SKILL_PROGRESSED: _skill_progressed,
+    EventType.CONDITION_APPLIED: _condition_applied,
+    EventType.CONDITION_REMOVED: _condition_removed,
+    EventType.WOUND_APPLIED: _wound_applied,
+    EventType.WOUND_CHANGED: _wound_changed,
+    EventType.VOCATION_STARTED: _vocation_started,
+    EventType.VOCATION_ENDED: _vocation_ended,
+    EventType.GOAL_ADDED: _goal_added,
+    EventType.GOAL_UPDATED: _goal_updated,
     EventType.SNAPSHOT_CREATED: _noop,
     EventType.RANDOM_DRAWN: _noop,
     EventType.CHECK_RESOLVED: _noop,
     EventType.NARRATION_RECORDED: _noop,
     EventType.PLAYER_INPUT_ACCEPTED: _noop,
     EventType.ACTION_INTENT_RESOLVED: _noop,
-    EventType.SKILL_PROGRESSED: _noop,
     EventType.TRAIT_ADDED: _noop,
     EventType.TRAIT_REMOVED: _noop,
-    EventType.CONDITION_APPLIED: _noop,
-    EventType.CONDITION_REMOVED: _noop,
-    EventType.WOUND_APPLIED: _noop,
-    EventType.WOUND_CHANGED: _noop,
     EventType.INVENTORY_ADDED: _noop,
     EventType.INVENTORY_REMOVED: _noop,
     EventType.KNOWLEDGE_CHANGED: _noop,
     EventType.ENCYCLOPEDIA_UNLOCKED: _noop,
-    EventType.GOAL_ADDED: _noop,
-    EventType.GOAL_UPDATED: _noop,
     EventType.GOAL_COMPLETED: _noop,
-    EventType.VOCATION_STARTED: _noop,
-    EventType.VOCATION_ENDED: _noop,
     EventType.LOCATION_CHANGED: _noop,
     EventType.NPC_INTRODUCED: _noop,
     EventType.NPC_PROFILE_FROZEN: _noop,

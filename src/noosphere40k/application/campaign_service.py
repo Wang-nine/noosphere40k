@@ -343,5 +343,128 @@ class TutorialService:
             events[index] = stamped
         return state
 
+    # ---- life transitions (B-04, G-06) ----
+
+    def time_jump(
+        self,
+        *,
+        campaign_id: str,
+        state: GameState,
+        days: int,
+        focus_tags: list[str] | None = None,
+        to_stage: str | None = None,
+        confirm: bool = True,
+    ) -> Playback:
+        """Preview then (if confirmed) settle a time jump / life transition.
+
+        If ``confirm`` is False only a preview is returned and NO events are
+        committed (G-06: cancelling produces zero events).
+        """
+        from noosphere40k.rules.aging import (
+            LifeTransitionProposal,
+            LifeTransitionService,
+            days_to_years,
+            stage_for_age,
+        )
+
+        character = state.character
+        if character is None:
+            raise RuleInvalidActionError("campaign has no player character yet")
+
+        current_stage = character.life_stage
+        target_stage = to_stage or stage_for_age(days_to_years(character.chronological_age_days + days))
+        if target_stage == current_stage:
+            target_stage = _next_stage(current_stage)
+
+        proposal = LifeTransitionProposal(
+            transition_id=f"tran-{campaign_id}-{state.sequence + 1}",
+            from_stage=current_stage,
+            to_stage=target_stage,
+            time_span_days=days,
+            focus_tags=focus_tags or ["labor"],
+        )
+        service = LifeTransitionService(rng=self.rng)
+        preview = service.preview(proposal, character)
+
+        if not confirm:
+            playback = Playback(
+                narration="【时间跳跃预览】\n" + "\n".join(preview.to_display()),
+                actions=[],
+            )
+            playback.messages.extend(preview.irreversible_notes)
+            return playback
+
+        settled = service.settle(proposal, character)
+        events: list[EventEnvelope] = []
+        base = state.sequence + 1
+
+        events.append(
+            self._new_event(
+                campaign_id, base, EventType.TIME_ADVANCED, origin=EventOrigin.RULES,
+                payload={"days": days, "to_stage": target_stage},
+            )
+        )
+        base += 1
+        deltas = settled["attribute_deltas"]
+        assert isinstance(deltas, dict)
+        for attr, delta in deltas.items():
+            if delta == 0:
+                continue
+            assert state.character is not None
+            new_value = state.character.attributes.get(attr, 25) + delta
+            events.append(
+                self._new_event(
+                    campaign_id, base, EventType.ATTRIBUTE_CHANGED, origin=EventOrigin.RULES,
+                    payload={"attribute_id": attr, "value": new_value},
+                )
+            )
+            base += 1
+        skill_progress = settled["skill_progress"]
+        assert isinstance(skill_progress, dict)
+        for skill_id, progress in skill_progress.items():
+            events.append(
+                self._new_event(
+                    campaign_id, base, EventType.SKILL_PROGRESSED, origin=EventOrigin.RULES,
+                    payload={"skill_id": skill_id, "progress": progress,
+                             "learned_from_event_id": proposal.transition_id},
+                )
+            )
+            base += 1
+        new_stage = str(settled["new_stage"])
+        if new_stage != character.life_stage:
+            events.append(
+                self._new_event(
+                    campaign_id, base, EventType.LIFE_STAGE_CHANGED, origin=EventOrigin.RULES,
+                    payload={"life_stage": new_stage},
+                )
+            )
+            base += 1
+
+        expected_before = state.sequence
+        state = self._apply_events(state, events)
+        commit_turn(
+            self.repo,
+            campaign_id=campaign_id,
+            expected_last_sequence=expected_before,
+            state=state,
+            events=events,
+        )
+        narration = f"时间推进 {days} 天，进入阶段 {new_stage}。" if new_stage != current_stage else f"时间推进 {days} 天。"
+        return Playback(
+            narration=narration,
+            actions=[],
+            messages=["\n".join(preview.to_display())],
+        )
+
+
+def _next_stage(current: str) -> str:
+    from noosphere40k.rules.aging import STAGE_AGE_RANGES
+
+    order = list(STAGE_AGE_RANGES.keys())
+    idx = order.index(current) if current in order else 0
+    if idx + 1 < len(order):
+        return order[idx + 1]
+    return current
+
 
 __all__ = ["TutorialService", "Playback", "PROMPT_VERSION"]
