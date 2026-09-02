@@ -12,6 +12,7 @@ from pathlib import Path
 from rich.console import Console
 
 from noosphere40k.application.campaign_service import TutorialService
+from noosphere40k.application.narration_service import NarrationService
 from noosphere40k.cli.render import (
     make_console,
     render_actions,
@@ -20,6 +21,7 @@ from noosphere40k.cli.render import (
     render_scene,
     render_state_summary,
 )
+from noosphere40k.config.settings import AppSettings
 from noosphere40k.content.schemas import SceneDefinition
 from noosphere40k.domain.errors import NoosphereError
 from noosphere40k.domain.models import GameState
@@ -45,6 +47,12 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
         render_error(console, "存档没有角色，无法继续。")
         return 1
 
+    # optional LLM narration service (falls back to templates automatically)
+    from noosphere40k.config.settings import load_settings
+
+    settings = load_settings(cli_overrides={})
+    narration = _build_narration_service(settings, service)
+
     # resume at the current scene: last SCENE_STARTED event
     scene_id = _current_scene_id(repo, campaign_id)
     scene = service._scenes[scene_id]  # noqa: SLF001 - service owns pack lookup
@@ -53,8 +61,10 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
     render_state_summary(console, state)
     console.print()
 
+    turn_counter = state.sequence + 1
     while True:
-        render_scene(console, scene, state, _narration_for(service, scene, state))
+        rendered = _narration_for(service, scene, state, narration, campaign_id, turn_counter)
+        render_scene(console, scene, state, rendered)
         render_actions(console, scene)
 
         try:
@@ -142,6 +152,7 @@ def run_game_loop(*, db_path: Path, campaign_id: str, console: Console | None = 
         except NoosphereError as exc:
             render_error(console, f"{exc.code.value}: {exc.message}")
             continue
+        turn_counter += 1
 
         if playback.check_detail:
             render_message(console, f"[dim]检定详情：{playback.check_detail}[/dim]")
@@ -166,8 +177,46 @@ def _current_scene_id(repo: CampaignRepository, campaign_id: str) -> str:
     return "scene.tutorial.ration_morning"
 
 
-def _narration_for(service: TutorialService, scene: SceneDefinition, state: GameState) -> str:
-    """Re-render the fallback template for the current scene (offline narration)."""
+def _build_narration_service(settings: AppSettings, service: TutorialService) -> NarrationService | None:
+    """Build an LLM NarrationService when a provider is configured, else None."""
+    from noosphere40k.application.narration_service import NarrationService
+    from noosphere40k.llm.factory import build_provider
+
+    if not settings.has_api_key:
+        return None
+    provider = build_provider(settings)
+    try:
+        return NarrationService(provider, service.lore)
+    except Exception:  # noqa: BLE001 - never break the loop over provider issues
+        return None
+
+
+def _narration_for(
+    service: TutorialService,
+    scene: SceneDefinition,
+    state: GameState,
+    narration_service: NarrationService | None,
+    campaign_id: str,
+    turn_number: int,
+) -> str:
+    """LLM narration with automatic template fallback (offline-safe)."""
+    if narration_service is None:
+        return service._template_text(scene, state)  # noqa: SLF001
+    import asyncio
+
+    text: str | None = None
+    try:
+        text = asyncio.run(narration_service.narrate(
+            state=state,
+            scene=scene,
+            player_input="",
+            trace_id=f"turn-{campaign_id}-{turn_number}",
+            turn_number=turn_number,
+        ))
+    except Exception:  # noqa: BLE001
+        text = None
+    if text:
+        return text
     return service._template_text(scene, state)  # noqa: SLF001
 
 

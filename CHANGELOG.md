@@ -4,6 +4,13 @@
 
 ## 2026-09-02
 
+- 开发（LLM 叙事接入游戏循环）：新增 `application/narration_service.py`。
+  - `NarrationService`：上下文组装（仅可见状态 + 允许事实）→ Narrator 生成 `NarrationResponse` → 输出守卫（一次修复，失败回退模板）；叙事仅展示、不提交事件。
+  - 游戏循环接入：配置了 key 时，每个场景由真实 LLM 生成叙事；未配置 key 或 provider 失败时自动回退场景模板（离线安全）。
+  - 测试：266 项通过（新增 4 项 NarrationService 契约测试：LLM 叙事、失败回退、canon claim 越界被拒、离线无 key 保持模板），Ruff 与 MyPy strict（63 文件）全绿。
+
+## 2026-09-02
+
 - 开发（E-02 补充 + 真实 LLM 验证）：接入 OpenAI-compatible Provider。
   - 新增 `llm/openai_compatible.py`：`OpenAICompatibleProvider`——调用 `/chat/completions`，`response_format=json_schema` 严格结构化输出，5xx/429 自动重试，超时/HTTP/解析错误映射为稳定错误码；key 仅存内存、日志脱敏；`/models` healthcheck。
   - 新增 `llm/factory.py`：`build_provider`——有 key+base_url+model 时用真实 Provider，否则回退离线 Stub（永不误发网络）。
